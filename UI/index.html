@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walmart Smart Shopper</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    /* --- Inlined styles.css --- */
+    /* Walmart Theme Colors */
+:root {
+  --wm-blue: #0071ce;
+  --wm-yellow: #ffc220;
+  --wm-bg: #f6f7fa;
+  --wm-header: #fff;
+  --wm-nav: #f0f1f3;
+  --wm-card: #fff;
+  --wm-border: #e0e0e0;
+  --wm-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--wm-bg);
+  color: #222;
+}
+.wm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--wm-header);
+  padding: 0.5rem 2rem;
+  box-shadow: var(--wm-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.wm-logo {
+  height: 38px;
+  margin-right: 1.5rem;
+}
+.wm-header-left {
+  display: flex;
+  align-items: center;
+}
+.wm-location {
+  background: #f3f6fa;
+  border-radius: 2rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.95rem;
+  color: #222;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wm-header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 0 2rem;
+}
+.wm-search {
+  width: 100%;
+  padding: 0.7rem 1.2rem;
+  border-radius: 2rem;
+  border: 1px solid var(--wm-border);
+  font-size: 1rem;
+  background: #f3f6fa;
+}
+.wm-search-icon {
+  position: absolute;
+  right: 1.2rem;
+  color: #888;
+  font-size: 1.2rem;
+}
+.wm-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.wm-btn {
+  border: none;
+  border-radius: 2rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.wm-btn-signin {
+  background: var(--wm-blue);
+  color: #fff;
+}
+.wm-btn-signin:hover {
+  background: #005fa3;
+}
+.wm-cart-icon {
+  position: relative;
+  font-size: 1.5rem;
+  color: var(--wm-blue);
+  cursor: pointer;
+}
+.wm-cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: var(--wm-yellow);
+  color: #222;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: none;
+}
+.wm-navbar {
+  background: var(--wm-nav);
+  padding: 0.5rem 2rem;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--wm-shadow);
+  border-bottom: 1px solid var(--wm-border);
+}
+.wm-navbar-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.wm-navbar-link {
+  color: #222;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.3rem 0.8rem;
+  border-radius: 1rem;
+  transition: background 0.2s;
+}
+.wm-navbar-link:hover {
+  background: #e8f0fe;
+}
+.wm-navbar-divider {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--wm-border);
+  margin: 0 1rem;
+}
+.wm-main {
+  padding: 2rem 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.wm-promo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+.wm-promo-card {
+  background: var(--wm-card);
+  border-radius: 1.2rem;
+  box-shadow: var(--wm-shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 180px;
+  position: relative;
+}
+.wm-promo-lg {
+  grid-column: span 2;
+  background: linear-gradient(90deg, #0071ce 60%, #005fa3 100%);
+  color: #fff;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 260px;
+}
+.wm-promo-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.wm-promo-date {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--wm-yellow);
+}
+.wm-promo-desc {
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+}
+.wm-btn-deal {
+  background: var(--wm-yellow);
+  color: #222;
+  font-weight: 600;
+  border-radius: 1.5rem;
+  padding: 0.6rem 1.5rem;
+  margin-top: 0.5rem;
+}
+.wm-promo-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin: 1rem 0;
+}
+.wm-promo-link {
+  color: var(--wm-blue);
+  text-decoration: underline;
+  font-size: 1rem;
+  margin-top: auto;
+}
+/* Modal Styles */
+.wm-modal {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.wm-modal-content {
+  background: #fff;
+  padding: 2rem 2.5rem;
+  border-radius: 1rem;
+  max-width: 400px;
+  margin: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  position: relative;
+  min-width: 300px;
+}
+.wm-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.wm-modal-input {
+  width: 100%;
+  margin: 0.5rem 0 1.5rem 0;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+}
+.wm-btn-primary {
+  background: var(--wm-blue);
+  color: #fff;
+}
+.wm-btn-primary:hover {
+  background: #005fa3;
+}
+/* Cart Modal */
+#cartItemsContainer {
+  min-height: 80px;
+  margin-bottom: 1rem;
+}
+#cartItemsContainer > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+#cartItemsContainer > div:last-child {
+    border-bottom: none;
+}
+.wm-chatbot-popup {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 3000;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  max-width: 420px;
+  width: 95vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.wm-chatbot-btn {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 3100;
+  background: var(--wm-blue);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wm-chatbot-btn:hover {
+  background: #005fa3;
+}
+@media (max-width: 900px) {
+  .wm-main { padding: 1rem 0; }
+  .wm-promo-grid { gap: 1rem; }
+  .wm-header, .wm-navbar { padding: 0.5rem 1rem; }
+}
+@media (max-width: 600px) {
+  .wm-header-center { margin: 0 0.5rem; }
+  .wm-promo-card { padding: 1rem; }
+  .wm-promo-lg { min-height: 180px; }
+  .wm-chatbot-popup { bottom: 1rem; right: 1rem; height: 80vh; }
+  .wm-chatbot-btn { bottom: 1rem; right: 1rem; width: 48px; height: 48px; font-size: 1.3rem; }
+}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="wm-header">
+    <div class="wm-header-left">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/Walmart_logo.svg" alt="Walmart Logo" class="wm-logo" />
+      <div class="wm-location">
+        <i class="fas fa-map-marker-alt"></i>
+        <span id="wm-location-text">Sacramento, 95829 - Sacramento Supercenter</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </div>
+    <div class="wm-header-center">
+      <input type="text" class="wm-search" placeholder="Search everything at Walmart online and in store" />
+      <i class="fas fa-search wm-search-icon"></i>
+    </div>
+    <div class="wm-header-right">
+      <button id="signInBtn" class="wm-btn wm-btn-signin">Sign In</button>
+      <div id="cartIcon" class="wm-cart-icon">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="cartBadge" class="wm-cart-badge">0</span>
+      </div>
+    </div>
+  </header>
+  <!-- Navigation Bar -->
+  <nav class="wm-navbar">
+    <div class="wm-navbar-section">
+      <span class="wm-navbar-link"><i class="fas fa-bars"></i> Departments</span>
+      <span class="wm-navbar-link"><i class="fas fa-concierge-bell"></i> Services</span>
+      <span class="wm-navbar-divider"></span>
+      <span class="wm-navbar-link">Get it Fast</span>
+      <span class="wm-navbar-link">New Arrivals</span>
+      <span class="wm-navbar-link">Deals</span>
+      <span class="wm-navbar-link">Pharmacy Delivery</span>
+      <span class="wm-navbar-link">Trending</span>
+      <span class="wm-navbar-link">Back to School</span>
+      <span class="wm-navbar-link">My Items</span>
+      <span class="wm-navbar-link">Auto Service</span>
+      <span class="wm-navbar-link">Only at Walmart</span>
+      <span class="wm-navbar-link">Registry</span>
+      <span class="wm-navbar-link">Walmart+</span>
+    </div>
+  </nav>
+  <!-- Promo Grid -->
+  <main class="wm-main">
+    <div class="wm-promo-grid">
+      <div class="wm-promo-card wm-promo-lg">
+        <div class="wm-promo-title">Walmart DEALS<br /><span class="wm-promo-date">JULY 8-13 ONLY!</span></div>
+        <div class="wm-promo-desc">Up to 30% off—go, go, go!</div>
+        <button class="wm-btn wm-btn-deal">Shop Deals</button>
+      </div>
+      <div class="wm-promo-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+        <div class="wm-promo-title">🛒 Smart Restocking</div>
+        <div class="wm-promo-desc">Check what products you need to restock based on your shopping history</div>
+        <button id="restockBtn" class="wm-btn wm-btn-deal" style="background: white; color: #28a745; border: 2px solid white;">Check if to be restocked</button>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">Smart Apple savings</div>
+        <img src="/UI/public/iphone.png" alt="iPhone" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">Huge savings on sporting goods</div>
+        <img src="/UI/public/bike.png" alt="Bike" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">Decor up to 30% off</div>
+        <img src="/UI/public/lamp.png" alt="Lamp" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">Up to 40% off</div>
+        <img src="/UI/public/AC.png" alt="AC" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop now</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">TVs up to 25% off</div>
+        <img src="/UI/public/tv.png" alt="TV" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">WOW-worthy beauty Deals</div>
+        <img src="/UI/public/hairdryer.png" alt="Hair Dryer" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+      <div class="wm-promo-card">
+        <div class="wm-promo-title">Resold at Walmart: up to 20% off</div>
+        <img src="/UI/public/AC.png" alt="AC" class="wm-promo-img" />
+        <a href="#" class="wm-promo-link">Shop Deals</a>
+      </div>
+    </div>
+  </main>
+  <!-- Sign In Modal -->
+  <div id="signInModal" class="wm-modal">
+    <div class="wm-modal-content">
+      <span id="closeSignIn" class="wm-modal-close">&times;</span>
+      <h2>Sign In</h2>
+      <label for="userIdInput">User ID</label>
+      <input id="userIdInput" type="text" class="wm-modal-input" placeholder="Enter your User ID" />
+      <button id="submitSignIn" class="wm-btn wm-btn-primary">Sign In</button>
+    </div>
+  </div>
+  <!-- Cart Modal -->
+  <div id="cartModal" class="wm-modal">
+    <div class="wm-modal-content">
+      <span id="closeCart" class="wm-modal-close">&times;</span>
+      <h2>Your Cart</h2>
+      <div id="cartItemsContainer"></div>
+      <button id="checkoutBtn" class="wm-btn wm-btn-primary">Checkout</button>
+    </div>
+  </div>
+  <!-- Chatbot Popup (hidden by default) -->
+  <div id="chatbotPopup" class="wm-chatbot-popup" style="display:none;"></div>
+  <button id="openChatbotBtn" class="wm-chatbot-btn" style="display:none;">
+    <i class="fas fa-comments"></i>
+  </button>
+  <script>
+// --- Inlined script.js ---
+// --- Walmart UI Logic ---
+let signedInUser = null;
+let cartItems = [];
+
+const signInBtn = document.getElementById('signInBtn');
+const signInModal = document.getElementById('signInModal');
+const closeSignIn = document.getElementById('closeSignIn');
+const submitSignIn = document.getElementById('submitSignIn');
+const userIdInput = document.getElementById('userIdInput');
+const cartIcon = document.getElementById('cartIcon');
+const cartModal = document.getElementById('cartModal');
+const closeCart = document.getElementById('closeCart');
+const cartBadge = document.getElementById('cartBadge');
+const cartItemsContainer = document.getElementById('cartItemsContainer');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const chatbotPopup = document.getElementById('chatbotPopup');
+const openChatbotBtn = document.getElementById('openChatbotBtn');
+const restockBtn = document.getElementById('restockBtn');
+
+// Show sign in modal
+if (signInBtn) {
+  signInBtn.addEventListener('click', () => {
+    signInModal.style.display = 'flex';
+    userIdInput.value = '';
+    userIdInput.focus();
+  });
+}
+// Close sign in modal
+if (closeSignIn) {
+  closeSignIn.addEventListener('click', () => {
+    signInModal.style.display = 'none';
+  });
+}
+// Submit sign in
+if (submitSignIn) {
+  submitSignIn.addEventListener('click', () => {
+    const userId = userIdInput.value.trim();
+    if (userId) {
+      signedInUser = userId;
+      signInModal.style.display = 'none';
+      if (signInBtn) signInBtn.style.display = 'none';
+      if (openChatbotBtn) openChatbotBtn.style.display = 'block';
+    } else {
+      userIdInput.style.borderColor = '#dc2626';
+    }
+  });
+  userIdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitSignIn.click();
+  });
+}
+// Show cart modal
+if (cartIcon) {
+  cartIcon.addEventListener('click', () => {
+    renderCartItems();
+    cartModal.style.display = 'flex';
+  });
+}
+// Close cart modal
+if (closeCart) {
+  closeCart.addEventListener('click', () => {
+    cartModal.style.display = 'none';
+  });
+}
+// Cart logic
+function addToCart(item) {
+  cartItems.push(item);
+  updateCartBadge();
+}
+function removeFromCart(index) {
+  cartItems.splice(index, 1);
+  updateCartBadge();
+  renderCartItems();
+}
+function updateCartBadge() {
+  if (cartItems.length > 0) {
+    cartBadge.textContent = cartItems.length;
+    cartBadge.style.display = 'inline-block';
+  } else {
+    cartBadge.style.display = 'none';
+  }
+}
+function renderCartItems() {
+  if (!cartItemsContainer) return;
+  if (cartItems.length === 0) {
+    cartItemsContainer.innerHTML = '<p style="text-align:center;color:#6b7280;">Your cart is empty.</p>';
+    return;
+  }
+  cartItemsContainer.innerHTML = cartItems.map((item, idx) => `
+    <div><span>${item}</span><button class="wm-btn wm-btn-primary" onclick="window.removeFromCartJS(${idx})">Remove</button></div>
+  `).join('');
+}
+window.removeFromCartJS = removeFromCart;
+if (checkoutBtn) {
+  checkoutBtn.addEventListener('click', () => {
+    if (cartItems.length === 0) return;
+    alert('Checkout complete! (mock)');
+    cartItems = [];
+    updateCartBadge();
+    renderCartItems();
+    cartModal.style.display = 'none';
+  });
+}
+// --- Chatbot Popup Logic ---
+if (openChatbotBtn) {
+  openChatbotBtn.addEventListener('click', () => {
+    if (chatbotPopup.innerHTML === '') {
+      // Inject the chatbot UI directly
+      chatbotPopup.innerHTML = `
+        <div class="chat-container">
+          <div class="chat-header">Smart Shopper AI 🛍️
+            <span id="closeChatbot" style="cursor:pointer;font-size:1.5rem;float:right;margin-left:auto;">&times;</span>
+          </div>
+          <div class="chat-user-info">
+            <input type="text" id="user_id" placeholder="Enter your User ID (e.g., T1005U0192)" style="display:none;" />
+          </div>
+          <div class="chat-messages" id="chat"></div>
+          <div class="chat-input">
+            <input type="text" id="query" placeholder="Try: 'am I having too much cola?' or 'what have I bought the most?'" onkeypress="handleKeyPress(event)" />
+            <button onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+        <style>
+          :root {
+            --main-color: #005eb8;
+            --bg-light: #f2f4f8;
+            --user-bubble: #d1eaff;
+            --bot-bubble: #eeeeee;
+          }
+          .chat-container { background: white; width: 95%; max-width: 420px; height: 90vh; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; overflow: hidden; }
+          .chat-header { background-color: var(--main-color); color: white; padding: 16px; font-size: 20px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+          .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #fafafa; }
+          .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.4; white-space: pre-wrap; font-size: 14px; }
+          .user { align-self: flex-end; background-color: var(--user-bubble); }
+          .bot { align-self: flex-start; background-color: var(--bot-bubble); position: relative; }
+          .bot::before { content: "🤖"; position: absolute; top: -20px; left: -8px; font-size: 12px; }
+          .chat-user-info { padding: 12px 16px; background-color: #f7f9fb; border-bottom: 1px solid #e0e0e0; }
+          .chat-user-info input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+          .chat-input { display: flex; padding: 12px; gap: 8px; border-top: 1px solid #eee; background-color: #fff; }
+          .chat-input input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+          .chat-input button { background-color: var(--main-color); color: white; border: none; border-radius: 8px; padding: 12px 16px; cursor: pointer; font-weight: bold; font-size: 15px; }
+          .chat-input button:hover { background-color: #004a91; }
+          .typing-indicator { align-self: flex-start; background-color: #eeeeee; padding: 10px 14px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
+          .typing-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #999; animation: typing 1.4s infinite ease-in-out; }
+          .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+          .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+          .typing-dot:nth-child(3) { animation-delay: 0s; }
+          @keyframes typing { 0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+        </style>
+      `;
+      // Set user_id from signedInUser and hide input
+      setTimeout(() => {
+        const userIdInput = chatbotPopup.querySelector('#user_id');
+        if (userIdInput) {
+          userIdInput.value = signedInUser || '';
+          userIdInput.style.display = 'none';
+        }
+        // Add close button logic
+        const closeBtn = chatbotPopup.querySelector('#closeChatbot');
+        if (closeBtn) {
+          closeBtn.onclick = () => chatbotPopup.style.display = 'none';
+        }
+      }, 100);
+      // Inject chatbot JS
+      window.handleKeyPress = function(event) {
+        if (event.key === "Enter") window.sendMessage();
+      };
+      
+      // Add welcome message with RAG examples
+      setTimeout(() => {
+        const chat = chatbotPopup.querySelector("#chat");
+        if (chat && chat.children.length === 0) {
+          const welcomeMsg = document.createElement("div");
+          welcomeMsg.classList.add("message", "bot");
+          welcomeMsg.innerHTML = `🤖 Welcome to Smart Shopper AI! 
+
+💡 Try these new features:
+• "am I having too much cola?" - Health analysis
+• "what have I bought the most?" - Purchase history
+• "what is the number of toothpaste I bought?" - Product stats
+• "Check if to be restocked" - Restocking status
+• "Suggest brands for shampoo" - Recommendations`;
+          chat.appendChild(welcomeMsg);
+        }
+      }, 200);
+      window.showTypingIndicator = function() {
+        const chat = chatbotPopup.querySelector("#chat");
+        const typingIndicator = document.createElement("div");
+        typingIndicator.classList.add("typing-indicator", "message");
+        typingIndicator.id = "typing-indicator";
+        typingIndicator.innerHTML = `
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        `;
+        chat.appendChild(typingIndicator);
+        chat.scrollTop = chat.scrollHeight;
+      };
+      window.hideTypingIndicator = function() {
+        const typing = chatbotPopup.querySelector("#typing-indicator");
+        if (typing) typing.remove();
+      };
+      window.sendMessage = async function() {
+        if (window.isProcessing) return;
+        const chat = chatbotPopup.querySelector("#chat");
+        const input = chatbotPopup.querySelector("#query");
+        const user_id = signedInUser || '';
+        const query = input.value.trim();
+        if (!query || !user_id) return;
+        window.isProcessing = true;
+        input.value = "";
+        const userMsg = document.createElement("div");
+        userMsg.classList.add("message", "user");
+        userMsg.innerText = query;
+        chat.appendChild(userMsg);
+        chat.scrollTop = chat.scrollHeight;
+        window.showTypingIndicator();
+        try {
+          const res = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id, query })
+          });
+          const data = await res.json();
+          window.hideTypingIndicator();
+          const botMsg = document.createElement("div");
+          botMsg.classList.add("message", "bot");
+          // Enhance: Add + buttons next to Brand suggestions and restocking items
+          let replyHtml = data.reply;
+          
+          // Add buttons for brand suggestions
+          replyHtml = replyHtml.replace(/(Brand[A-Z])/g, (brand) => {
+            return `${brand} <button class='wm-btn wm-btn-primary wm-btn-plus' style='margin-left:8px;font-size:0.9em;padding:2px 10px;display:inline-block' onclick='window.addToCartFromChatbot("${brand}")'>+</button>`;
+          });
+          
+          // Add buttons for restocking items
+          const restockLines = replyHtml.match(/⚠️ (.+?) - Due since/g) || [];
+          const normalRestockLines = replyHtml.match(/📦 (.+?) - Due on/g) || [];
+          
+          restockLines.forEach(line => {
+            const productName = line.replace('⚠️ ', '').replace(' - Due since', '');
+            const buttonHtml = ` <button class='wm-btn wm-btn-primary' style='margin-left:8px;font-size:0.9em;padding:2px 10px;display:inline-block' onclick='window.addToCartFromChatbot("${productName}")'>Add to Cart</button>`;
+            replyHtml = replyHtml.replace(line, line + buttonHtml);
+          });
+          
+          normalRestockLines.forEach(line => {
+            const productName = line.replace('📦 ', '').replace(' - Due on', '');
+            const buttonHtml = ` <button class='wm-btn wm-btn-primary' style='margin-left:8px;font-size:0.9em;padding:2px 10px;display:inline-block' onclick='window.addToCartFromChatbot("${productName}")'>Add to Cart</button>`;
+            replyHtml = replyHtml.replace(line, line + buttonHtml);
+          });
+          
+          botMsg.innerHTML = replyHtml;
+          chat.appendChild(botMsg);
+          chat.scrollTop = chat.scrollHeight;
+        } catch (err) {
+          window.hideTypingIndicator();
+          const errMsg = document.createElement("div");
+          errMsg.classList.add("message", "bot");
+          errMsg.innerText = "⚠️ Error: Unable to connect to server.";
+          chat.appendChild(errMsg);
+        } finally {
+          window.isProcessing = false;
+        }
+      };
+      // Add to cart from chatbot + button
+      window.addToCartFromChatbot = function(brand) {
+        addToCart(brand);
+        updateCartBadge();
+        renderCartItems();
+        if (chatbotPopup) chatbotPopup.querySelector('#chat').scrollTop = chatbotPopup.querySelector('#chat').scrollHeight;
+      };
+      chatbotPopup.style.display = 'flex';
+    } else {
+      chatbotPopup.style.display = 'flex';
+    }
+  });
+}
+// Restock button functionality
+if (restockBtn) {
+  restockBtn.addEventListener('click', async () => {
+    if (!signedInUser) {
+      alert('Please sign in first to check your restocking status.');
+      return;
+    }
+    
+    restockBtn.disabled = true;
+    restockBtn.textContent = 'Checking...';
+    
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: signedInUser,
+          query: 'Check if to be restocked'
+        })
+      });
+      
+      const data = await response.json();
+      
+      // Show result in a modal
+      const modal = document.createElement('div');
+      modal.className = 'wm-modal';
+      modal.style.display = 'flex';
+      
+      // Parse the response to extract product names and add cart buttons
+      let replyHtml = data.reply;
+      const productLines = replyHtml.match(/⚠️ (.+?) - Due since/g) || [];
+      const normalLines = replyHtml.match(/📦 (.+?) - Due on/g) || [];
+      
+      // Add cart buttons to each product line
+      productLines.forEach(line => {
+        const productName = line.replace('⚠️ ', '').replace(' - Due since', '');
+        const buttonHtml = ` <button class="wm-btn wm-btn-primary" style="margin-left: 8px; font-size: 0.9em; padding: 2px 10px; display: inline-block;" onclick="addToCartFromRestock('${productName}')">Add to Cart</button>`;
+        replyHtml = replyHtml.replace(line, line + buttonHtml);
+      });
+      
+      normalLines.forEach(line => {
+        const productName = line.replace('📦 ', '').replace(' - Due on', '');
+        const buttonHtml = ` <button class="wm-btn wm-btn-primary" style="margin-left: 8px; font-size: 0.9em; padding: 2px 10px; display: inline-block;" onclick="addToCartFromRestock('${productName}')">Add to Cart</button>`;
+        replyHtml = replyHtml.replace(line, line + buttonHtml);
+      });
+      
+      modal.innerHTML = `
+        <div class="wm-modal-content" style="max-width: 500px;">
+          <span class="wm-modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+          <h2>🛒 Restocking Status</h2>
+          <div style="white-space: pre-wrap; line-height: 1.6; margin: 1rem 0;">${replyHtml}</div>
+          <div style="margin-top: 1rem; text-align: center;">
+            <button class="wm-btn wm-btn-primary" onclick="addAllToCartFromRestock()" style="margin-right: 0.5rem;">Add All to Cart</button>
+            <button class="wm-btn wm-btn-primary" onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+    } catch (error) {
+      alert('Error checking restocking status. Please try again.');
+    } finally {
+      restockBtn.disabled = false;
+      restockBtn.textContent = 'Check if to be restocked';
+    }
+  });
+}
+
+// Add to cart functions for restocking modal
+window.addToCartFromRestock = function(productName) {
+  addToCart(productName);
+  updateCartBadge();
+  renderCartItems();
+  // Show confirmation
+  const button = event.target;
+  const originalText = button.textContent;
+  button.textContent = 'Added!';
+  button.style.background = '#28a745';
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style.background = '';
+  }, 1000);
+};
+
+window.addAllToCartFromRestock = function() {
+  // Extract all product names from the modal
+  const modal = document.querySelector('.wm-modal-content');
+  const productLines = modal.innerHTML.match(/⚠️ (.+?) - Due since/g) || [];
+  const normalLines = modal.innerHTML.match(/📦 (.+?) - Due on/g) || [];
+  
+  const allProducts = [];
+  productLines.forEach(line => {
+    const productName = line.replace('⚠️ ', '').replace(' - Due since', '');
+    allProducts.push(productName);
+  });
+  
+  normalLines.forEach(line => {
+    const productName = line.replace('📦 ', '').replace(' - Due on', '');
+    allProducts.push(productName);
+  });
+  
+  // Add all products to cart
+  allProducts.forEach(product => {
+    addToCart(product);
+  });
+  
+  updateCartBadge();
+  renderCartItems();
+  
+  // Show confirmation
+  alert(`Added ${allProducts.length} items to your cart!`);
+};
+
+// Hide chatbot and open button by default
+if (chatbotPopup) chatbotPopup.style.display = 'none';
+if (openChatbotBtn) openChatbotBtn.style.display = 'none';
+  </script>
+</body>
+</html> 

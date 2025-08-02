@@ -1,0 +1,10 @@
+AIzaSyAR5VNhCHL2nKQ72Q7VXsCA_GblLhcpGeI
+
+AIzaSyB_X2ngChpyQq1V-K-AV_hhzPDWup7w7uM
+
+
+{'PRODUCT_NAME': 'Cola 500ml', 'Primary_Brand': 'BrandB', 'Exploratory_Brand': 'BrandE'}
+
+T1005U0192
+Cola 500ml
+
