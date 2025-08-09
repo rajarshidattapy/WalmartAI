@@ -255,16 +255,5 @@ curl http://localhost:5000/health
 
 ---
 
-## 🧠 Created For
-Walmart Sparkathon hackathon to demonstrate the power of intelligent personalization and operational optimization using machine learning on structured datasets.
-
-### Team:
-- **Rajarshi Datta** (Team Leader): created RAG model and chatbot features
-- **Rahil Masood**: handled data analysis and exploration
-- **Abhay Singh**: handled the UI
-- **Gautam Sharma**: handled warehouse backend
-
----
-
 ## 📝 License
 This project was created for educational and demonstration purposes as part of the Walmart Sparkathon hackathon.
