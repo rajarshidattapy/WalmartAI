@@ -2,9 +2,28 @@ import re
 import logging
 import pandas as pd
 from typing import Optional, Dict, Any, Tuple
+import os
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+def get_predicted_purchases_dataset():
+    """Get the predicted purchases dataset from CSV file"""
+    try:
+        # Get the path to the predicted_purchases.csv file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(current_dir, '..', 'Output_dataset', 'predicted_purchases.csv')
+        
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+            logger.info(f"Successfully loaded predicted purchases dataset with {len(df)} records")
+            return df
+        else:
+            logger.error(f"Predicted purchases CSV file not found at: {csv_path}")
+            return None
+    except Exception as e:
+        logger.error(f"Error loading predicted purchases dataset: {e}")
+        return None
 
 def get_dataset():
     """Get the dataset dynamically to avoid circular imports"""
@@ -79,8 +98,84 @@ def extract_product_from_query(query: str) -> Optional[str]:
     
     return None
 
+def get_user_product_data_from_predictions(user_id: str, product: str) -> Dict[str, Any]:
+    """Get specific product data from predicted_purchases.csv for a user"""
+    df = get_predicted_purchases_dataset()
+    if df is None:
+        return {"error": "Predicted purchases dataset not available"}
+    
+    try:
+        # Filter user's data for the specific product
+        user_product_data = df[
+            (df['tid'] == user_id) & 
+            (df['PRODUCT_NAME'].str.contains(product, na=False, case=False))
+        ]
+        
+        if user_product_data.empty:
+            return {
+                "product": product,
+                "found": False,
+                "message": f"No data found for {product} for user {user_id}"
+            }
+        
+        # Get the first (and should be only) record for this user-product combination
+        record = user_product_data.iloc[0]
+        
+        return {
+            "product": record['PRODUCT_NAME'],
+            "found": True,
+            "estimated_family_size": record['estimated_family_size'],
+            "avg_days_between_orders": record['avg_days_between_orders'],
+            "consumption_days": record['consumption_days'],
+            "last_purchase": record['last_purchase'],
+            "predicted_next_date": record['predicted_next_date'],
+            "message": f"Found data for {record['PRODUCT_NAME']}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting user product data from predictions: {e}")
+        return {"error": f"Error retrieving data: {str(e)}"}
+
 def calculate_product_usage(user_id: str, product: str) -> Dict[str, Any]:
     """Calculate user's product usage statistics with improved error handling"""
+    # First try to get data from predicted_purchases.csv
+    prediction_data = get_user_product_data_from_predictions(user_id, product)
+    
+    if prediction_data.get("found", False):
+        # Use the prediction data to provide specific information
+        avg_days = prediction_data['avg_days_between_orders']
+        consumption_days = prediction_data['consumption_days']
+        last_purchase = prediction_data['last_purchase']
+        predicted_next = prediction_data['predicted_next_date']
+        
+        # Determine if consumption is excessive based on the data
+        if avg_days < 1:
+            frequency = "Very frequent (daily or multiple times per day)"
+            consumption_level = "High"
+        elif avg_days < 7:
+            frequency = "Frequent (weekly)"
+            consumption_level = "Moderate to High"
+        elif avg_days < 30:
+            frequency = "Occasional (monthly)"
+            consumption_level = "Moderate"
+        else:
+            frequency = "Infrequent (rarely)"
+            consumption_level = "Low"
+        
+        return {
+            "product": prediction_data['product'],
+            "total_purchases": "Data available",  # We don't have exact count in predictions
+            "avg_days_between_orders": avg_days,
+            "consumption_days": consumption_days,
+            "last_purchase": last_purchase,
+            "predicted_next_date": predicted_next,
+            "frequency": frequency,
+            "consumption_level": consumption_level,
+            "message": f"Based on prediction data for {prediction_data['product']}",
+            "source": "predicted_purchases.csv"
+        }
+    
+    # Fallback to original dataset if prediction data not found
     df = get_dataset()
     if not user_id or not product or df is None:
         return {"error": "Invalid input or dataset not available"}
@@ -100,7 +195,8 @@ def calculate_product_usage(user_id: str, product: str) -> Dict[str, Any]:
                 "average_quantity": 0,
                 "last_purchase": None,
                 "usage_ml": 0,
-                "message": f"No purchases found for {product}"
+                "message": f"No purchases found for {product}",
+                "source": "original_dataset"
             }
         
         # Calculate statistics
@@ -159,7 +255,8 @@ def calculate_product_usage(user_id: str, product: str) -> Dict[str, Any]:
             "last_purchase": last_purchase,
             "usage_ml": total_quantity,  # Assuming quantity is in ml for beverages
             "frequency": frequency,
-            "message": f"Found {total_purchases} purchases of {product}"
+            "message": f"Found {total_purchases} purchases of {product}",
+            "source": "original_dataset"
         }
         
     except Exception as e:
@@ -168,6 +265,36 @@ def calculate_product_usage(user_id: str, product: str) -> Dict[str, Any]:
 
 def get_most_purchased_products(user_id: str, limit: int = 5) -> Dict[str, Any]:
     """Get user's most purchased products with improved error handling"""
+    # First try to get data from predicted_purchases.csv
+    df_predictions = get_predicted_purchases_dataset()
+    if df_predictions is not None:
+        try:
+            user_predictions = df_predictions[df_predictions['tid'] == user_id]
+            if not user_predictions.empty:
+                # Get unique products for this user
+                user_products = user_predictions[['PRODUCT_NAME', 'avg_days_between_orders', 'consumption_days']].drop_duplicates()
+                
+                # Sort by consumption frequency (lower avg_days = more frequent)
+                user_products = user_products.sort_values('avg_days_between_orders')
+                
+                products = []
+                for _, row in user_products.head(limit).iterrows():
+                    products.append({
+                        "product": row['PRODUCT_NAME'],
+                        "avg_days_between_orders": row['avg_days_between_orders'],
+                        "consumption_days": row['consumption_days']
+                    })
+                
+                return {
+                    "user_id": user_id,
+                    "products": products,
+                    "message": f"Top {len(products)} most frequently purchased products (based on prediction data):",
+                    "source": "predicted_purchases.csv"
+                }
+        except Exception as e:
+            logger.warning(f"Error getting predictions data: {e}")
+    
+    # Fallback to original dataset
     df = get_dataset()
     if not user_id or df is None:
         return {"error": "Invalid input or dataset not available"}
@@ -180,7 +307,8 @@ def get_most_purchased_products(user_id: str, limit: int = 5) -> Dict[str, Any]:
             return {
                 "user_id": user_id,
                 "products": [],
-                "message": "No purchase history found for this user."
+                "message": "No purchase history found for this user.",
+                "source": "original_dataset"
             }
         
         # Count products by name with improved handling
@@ -196,7 +324,8 @@ def get_most_purchased_products(user_id: str, limit: int = 5) -> Dict[str, Any]:
         return {
             "user_id": user_id,
             "products": products,
-            "message": f"Top {len(products)} most purchased products:"
+            "message": f"Top {len(products)} most purchased products:",
+            "source": "original_dataset"
         }
         
     except Exception as e:
@@ -311,8 +440,46 @@ def rag_product_analysis(user_id: str, query: str) -> str:
             if "error" in usage_data:
                 return f"⚠️ {usage_data['error']}"
             
-            advice = generate_health_advice(product, usage_data)
-            return advice
+            # Provide specific data from predictions instead of generic advice
+            if usage_data.get("source") == "predicted_purchases.csv":
+                avg_days = usage_data['avg_days_between_orders']
+                consumption_days = usage_data['consumption_days']
+                last_purchase = usage_data['last_purchase']
+                predicted_next = usage_data['predicted_next_date']
+                consumption_level = usage_data['consumption_level']
+                
+                response = f"📊 **Your {usage_data['product']} consumption analysis:**\n\n"
+                response += f"• **Average days between orders:** {avg_days:.2f} days\n"
+                response += f"• **Consumption days:** {consumption_days:.1f} days\n"
+                response += f"• **Last purchase:** {last_purchase}\n"
+                response += f"• **Predicted next purchase:** {predicted_next}\n"
+                response += f"• **Consumption level:** {consumption_level}\n\n"
+                
+                if consumption_level == "High":
+                    response += "⚠️ **Analysis:** Your consumption appears to be high. "
+                    if avg_days < 1:
+                        response += f"You're purchasing {usage_data['product']} almost daily, which may be excessive."
+                    else:
+                        response += f"You're purchasing every {avg_days:.1f} days on average."
+                    response += " Consider reducing frequency for better health and cost management."
+                elif consumption_level == "Moderate to High":
+                    response += "💡 **Analysis:** Your consumption is moderate to high. "
+                    response += f"You purchase {usage_data['product']} every {avg_days:.1f} days on average. "
+                    response += "This might be reasonable depending on your needs, but monitor if it's necessary."
+                elif consumption_level == "Moderate":
+                    response += "✅ **Analysis:** Your consumption appears moderate. "
+                    response += f"You purchase {usage_data['product']} every {avg_days:.1f} days on average. "
+                    response += "This seems like a reasonable consumption pattern."
+                else:
+                    response += "✅ **Analysis:** Your consumption is low. "
+                    response += f"You purchase {usage_data['product']} every {avg_days:.1f} days on average. "
+                    response += "This is a healthy, controlled consumption pattern."
+                
+                return response
+            else:
+                # Fallback to original health advice for non-prediction data
+                advice = generate_health_advice(product, usage_data)
+                return advice
         
         # Check if it's a "most bought" query
         elif "bought the most" in query or "purchased the most" in query or "top purchases" in query:
@@ -323,41 +490,35 @@ def rag_product_analysis(user_id: str, query: str) -> str:
             if not purchase_data["products"]:
                 return purchase_data["message"]
             
-            # Use Gemini to provide intelligent analysis of purchase patterns
-            model = get_model()
-            if model is not None and purchase_data["products"]:
-                try:
-                    products_text = "\n".join([f"{i+1}. {p['product'].title()}: {p['purchase_count']} purchases" 
-                                             for i, p in enumerate(purchase_data["products"])])
+            # Provide specific data from predictions
+            if purchase_data.get("source") == "predicted_purchases.csv":
+                response = f"📊 **{purchase_data['message']}**\n\n"
+                response += "**Based on your actual purchase prediction data:**\n\n"
+                
+                for i, product_info in enumerate(purchase_data["products"], 1):
+                    avg_days = product_info['avg_days_between_orders']
+                    consumption_days = product_info['consumption_days']
                     
-                    prompt = f"""
-                    As a shopping and lifestyle expert, analyze this user's most purchased products and provide insights:
+                    response += f"{i}. **{product_info['product']}**\n"
+                    response += f"   • Average days between orders: {avg_days:.2f} days\n"
+                    response += f"   • Consumption days: {consumption_days:.1f} days\n"
                     
-                    User's Top Purchased Products:
-                    {products_text}
-                    
-                    Please provide:
-                    1. What these purchase patterns reveal about the user's lifestyle and preferences
-                    2. Potential health implications of their shopping habits
-                    3. Suggestions for healthier alternatives or balanced shopping
-                    4. Any concerning patterns that might need attention
-                    5. Recommendations for diversifying their purchases
-                    
-                    Keep your response friendly, helpful, and actionable. Focus on positive suggestions rather than criticism.
-                    Limit your response to 4-5 sentences for clarity.
-                    """
-                    
-                    response = model.generate_content(prompt)
-                    if response and hasattr(response, 'text'):
-                        return f"📊 {purchase_data['message']}\n\n{products_text}\n\n💡 **Analysis:**\n{response.text.strip()}"
+                    if avg_days < 1:
+                        response += f"   • Frequency: Very frequent (almost daily)\n"
+                    elif avg_days < 7:
+                        response += f"   • Frequency: Weekly\n"
+                    elif avg_days < 30:
+                        response += f"   • Frequency: Monthly\n"
                     else:
-                        # Fallback to simple list with basic analysis
-                        return generate_purchase_analysis_fallback(purchase_data)
-                        
-                except Exception as e:
-                    logger.error(f"Gemini API error in purchase analysis: {e}")
-                    return generate_purchase_analysis_fallback(purchase_data)
+                        response += f"   • Frequency: Rarely\n"
+                    response += "\n"
+                
+                response += "💡 **Insight:** This data shows your actual purchasing patterns based on Walmart's prediction algorithms. "
+                response += "Products with lower average days between orders are purchased more frequently."
+                
+                return response
             else:
+                # Fallback to original analysis for non-prediction data
                 return generate_purchase_analysis_fallback(purchase_data)
         
         # Check if it's a "number of" or "how much" query
@@ -370,56 +531,40 @@ def rag_product_analysis(user_id: str, query: str) -> str:
             if "error" in usage_data:
                 return f"⚠️ {usage_data['error']}"
             
-            if usage_data["total_purchases"] == 0:
-                return f"📊 You haven't purchased any {product} yet."
-            
-            # Use Gemini to provide intelligent insights about the product usage
-            model = get_model()
-            if model is not None:
-                try:
-                    stats_text = f"""
-                    Product: {product}
-                    Total purchases: {usage_data['total_purchases']}
-                    Total quantity: {usage_data['total_quantity']} ml
-                    Average per purchase: {usage_data['average_quantity']:.1f} ml
-                    Purchase frequency: {usage_data.get('frequency', 'Unknown')}
-                    Last purchase: {usage_data['last_purchase'] if usage_data['last_purchase'] else 'Not available'}
-                    """
-                    
-                    prompt = f"""
-                    As a shopping and lifestyle expert, analyze this user's specific product consumption pattern:
-                    
-                    {stats_text}
-                    
-                    Please provide:
-                    1. What this consumption pattern suggests about their usage habits
-                    2. Whether this is a healthy or concerning consumption level
-                    3. Suggestions for optimizing their consumption of this product
-                    4. Alternative products they might consider
-                    5. Recommendations for better purchasing habits
-                    
-                    Keep your response friendly, informative, and actionable. Focus on helpful insights rather than judgment.
-                    Limit your response to 4-5 sentences for clarity.
-                    """
-                    
-                    response = model.generate_content(prompt)
-                    if response and hasattr(response, 'text'):
-                        stats_summary = f"📊 Your {product} purchase summary:\n"
-                        stats_summary += f"• Total purchases: {usage_data['total_purchases']}\n"
-                        stats_summary += f"• Total quantity: {usage_data['total_quantity']} ml\n"
-                        stats_summary += f"• Average per purchase: {usage_data['average_quantity']:.1f} ml\n"
-                        stats_summary += f"• Purchase frequency: {usage_data.get('frequency', 'Unknown')}\n"
-                        if usage_data["last_purchase"]:
-                            stats_summary += f"• Last purchase: {usage_data['last_purchase']}\n"
-                        
-                        return f"{stats_summary}\n💡 **Insights:**\n{response.text.strip()}"
-                    else:
-                        return generate_usage_analysis_fallback(product, usage_data)
-                        
-                except Exception as e:
-                    logger.error(f"Gemini API error in product analysis: {e}")
-                    return generate_usage_analysis_fallback(product, usage_data)
+            # Provide specific data from predictions
+            if usage_data.get("source") == "predicted_purchases.csv":
+                avg_days = usage_data['avg_days_between_orders']
+                consumption_days = usage_data['consumption_days']
+                last_purchase = usage_data['last_purchase']
+                predicted_next = usage_data['predicted_next_date']
+                
+                response = f"📊 **Your {usage_data['product']} purchase details:**\n\n"
+                response += f"• **Average days between orders:** {avg_days:.2f} days\n"
+                response += f"• **Consumption days:** {consumption_days:.1f} days\n"
+                response += f"• **Last purchase:** {last_purchase}\n"
+                response += f"• **Predicted next purchase:** {predicted_next}\n\n"
+                
+                # Calculate estimated annual consumption
+                if avg_days > 0:
+                    annual_purchases = 365 / avg_days
+                    response += f"• **Estimated annual purchases:** {annual_purchases:.1f} times\n"
+                
+                response += f"\n💡 **Analysis:** Based on Walmart's prediction data, you purchase {usage_data['product']} "
+                if avg_days < 1:
+                    response += "almost daily, which is very frequent consumption."
+                elif avg_days < 7:
+                    response += f"every {avg_days:.1f} days on average, which is weekly consumption."
+                elif avg_days < 30:
+                    response += f"every {avg_days:.1f} days on average, which is monthly consumption."
+                else:
+                    response += f"every {avg_days:.1f} days on average, which is infrequent consumption."
+                
+                return response
             else:
+                # Fallback to original analysis for non-prediction data
+                if usage_data["total_purchases"] == 0:
+                    return f"📊 You haven't purchased any {product} yet."
+                
                 return generate_usage_analysis_fallback(product, usage_data)
         
         # Check for general health/consumption queries
@@ -436,8 +581,20 @@ def rag_product_analysis(user_id: str, query: str) -> str:
 def generate_purchase_analysis_fallback(purchase_data: Dict[str, Any]) -> str:
     """Generate fallback analysis for purchase patterns"""
     response = f"📊 {purchase_data['message']}\n\n"
-    for i, product_info in enumerate(purchase_data["products"], 1):
-        response += f"{i}. {product_info['product'].title()}: {product_info['purchase_count']} purchases\n"
+    
+    # Check if we have prediction data
+    if purchase_data.get("source") == "predicted_purchases.csv":
+        for i, product_info in enumerate(purchase_data["products"], 1):
+            avg_days = product_info.get('avg_days_between_orders', 'N/A')
+            consumption_days = product_info.get('consumption_days', 'N/A')
+            
+            response += f"{i}. **{product_info['product']}**\n"
+            response += f"   • Average days between orders: {avg_days}\n"
+            response += f"   • Consumption days: {consumption_days}\n\n"
+    else:
+        # Original format for non-prediction data
+        for i, product_info in enumerate(purchase_data["products"], 1):
+            response += f"{i}. {product_info['product'].title()}: {product_info['purchase_count']} purchases\n"
     
     response += "\n💡 **Basic Analysis:**\n"
     response += "Consider diversifying your purchases and exploring healthier alternatives. "
@@ -448,20 +605,44 @@ def generate_purchase_analysis_fallback(purchase_data: Dict[str, Any]) -> str:
 def generate_usage_analysis_fallback(product: str, usage_data: Dict[str, Any]) -> str:
     """Generate fallback analysis for product usage"""
     response = f"📊 Your {product} purchase summary:\n"
-    response += f"• Total purchases: {usage_data['total_purchases']}\n"
-    response += f"• Total quantity: {usage_data['total_quantity']} ml\n"
-    response += f"• Average per purchase: {usage_data['average_quantity']:.1f} ml\n"
-    response += f"• Purchase frequency: {usage_data.get('frequency', 'Unknown')}\n"
-    if usage_data["last_purchase"]:
-        response += f"• Last purchase: {usage_data['last_purchase']}\n"
     
-    response += f"\n💡 **Basic Insights:**\n"
-    if usage_data['total_purchases'] > 15:
-        response += f"Your {product} consumption appears high. Consider reducing frequency and exploring alternatives."
-    elif usage_data['total_purchases'] > 5:
-        response += f"Your {product} consumption is moderate. Consider balancing with other products."
+    # Check if we have prediction data
+    if usage_data.get("source") == "predicted_purchases.csv":
+        avg_days = usage_data.get('avg_days_between_orders', 'N/A')
+        consumption_days = usage_data.get('consumption_days', 'N/A')
+        last_purchase = usage_data.get('last_purchase', 'N/A')
+        predicted_next = usage_data.get('predicted_next_date', 'N/A')
+        
+        response += f"• Average days between orders: {avg_days}\n"
+        response += f"• Consumption days: {consumption_days}\n"
+        response += f"• Last purchase: {last_purchase}\n"
+        response += f"• Predicted next purchase: {predicted_next}\n"
+        
+        response += f"\n💡 **Basic Insights:**\n"
+        if isinstance(avg_days, (int, float)) and avg_days < 1:
+            response += f"Your {product} consumption appears very frequent (almost daily). Consider if this is necessary."
+        elif isinstance(avg_days, (int, float)) and avg_days < 7:
+            response += f"Your {product} consumption is weekly. This seems reasonable for most products."
+        elif isinstance(avg_days, (int, float)) and avg_days < 30:
+            response += f"Your {product} consumption is monthly. This is a healthy consumption pattern."
+        else:
+            response += f"Your {product} consumption is infrequent. This is a controlled consumption pattern."
     else:
-        response += f"Your {product} consumption is reasonable. Keep up the balanced approach!"
+        # Original format for non-prediction data
+        response += f"• Total purchases: {usage_data['total_purchases']}\n"
+        response += f"• Total quantity: {usage_data['total_quantity']} ml\n"
+        response += f"• Average per purchase: {usage_data['average_quantity']:.1f} ml\n"
+        response += f"• Purchase frequency: {usage_data.get('frequency', 'Unknown')}\n"
+        if usage_data["last_purchase"]:
+            response += f"• Last purchase: {usage_data['last_purchase']}\n"
+        
+        response += f"\n💡 **Basic Insights:**\n"
+        if usage_data['total_purchases'] > 15:
+            response += f"Your {product} consumption appears high. Consider reducing frequency and exploring alternatives."
+        elif usage_data['total_purchases'] > 5:
+            response += f"Your {product} consumption is moderate. Consider balancing with other products."
+        else:
+            response += f"Your {product} consumption is reasonable. Keep up the balanced approach!"
     
     return response
 

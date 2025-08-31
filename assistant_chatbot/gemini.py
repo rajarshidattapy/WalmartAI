@@ -26,7 +26,7 @@ def initialize_app() -> bool:
             logger.warning("Using placeholder API key. Set GEMINI_API_KEY environment variable.")
         
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Load dataset with comprehensive validation - Fixed path
         dataset_path = os.path.join(os.path.dirname(__file__), 'Our_dataset.csv')

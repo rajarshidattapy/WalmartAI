@@ -216,7 +216,6 @@ config.ini
 secrets.json
 
 # Model files and large data
-*.pkl
 *.pickle
 *.h5
 *.hdf5
